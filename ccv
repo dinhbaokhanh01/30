@@ -1,0 +1,206 @@
+Dưới đây là file README.md hoàn chỉnh tổng hợp toàn bộ bài lab (bao gồm cấu trúc, mã nguồn đầy đủ và hướng dẫn triển khai). Bạn chỉ cần sao chép nội dung bên dưới và lưu thành file README.md trong thư mục gốc của dự án để đẩy (push) lên GitHub.
+
+Markdown
+# Ứng dụng Chuyển đổi Tiền tệ USD sang VNĐ (JSP & Jakarta EE)
+
+Dự án Java Web cơ bản hướng dẫn tạo và xử lý dữ liệu với JSP trên Tomcat 10+, áp dụng công nghệ Maven Webapp, Jakarta Servlet API, và sử dụng Scriptlet / Expression trong JSP.
+
+---
+
+## 📂 Cấu trúc thư mục dự án
+
+```text
+jsp-currency-converter/
+├── pom.xml                                # File cấu hình quản lý thư viện Maven
+└── src/
+    └── main/
+        └── webapp/                        # Thư mục chứa giao diện và logic JSP
+            ├── index.jsp                  # Trang chủ chứa Form nhập tỉ giá và lượng USD
+            ├── converter.jsp              # Trang xử lý tính toán và hiển thị kết quả bằng JSP
+            └── WEB-INF/                   # Thư mục cấu hình bảo mật ứng dụng
+                └── web.xml                # File cấu hình ứng dụng Web (Jakarta Servlet 6.0)
+📄 Mã nguồn chi tiết
+1. pom.xml
+XML
+<project xmlns="[http://maven.apache.org/POM/4.0.0](http://maven.apache.org/POM/4.0.0)" 
+         xmlns:xsi="[http://www.w3.org/2001/XMLSchema-instance](http://www.w3.org/2001/XMLSchema-instance)" 
+         xsi:schemaLocation="[http://maven.apache.org/POM/4.0.0](http://maven.apache.org/POM/4.0.0) [http://maven.apache.org/maven-v4_0_0.xsd](http://maven.apache.org/maven-v4_0_0.xsd)">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.codegym</groupId>
+    <artifactId>jsp-currency-converter</artifactId>
+    <packaging>war</packaging>
+    <version>1.0-SNAPSHOT</version>
+    <name>JSP Currency Converter Webapp</name>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>6.0.0</version>
+            <scope>provided</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>jakarta.servlet.jsp</groupId>
+            <artifactId>jakarta.servlet.jsp-api</artifactId>
+            <version>3.1.1</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>jsp-currency-converter</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.4.0</version>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+2. src/main/webapp/index.jsp
+Java
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>Chuyển đổi tiền tệ</title>
+        <style>
+            body { font-family: 'Arial', sans-serif; display: flex; justify-content: center; margin-top: 100px; background-color: #f8fafc; }
+            .converter-container { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; width: 350px; }
+            input { padding: 10px; margin: 10px 0; width: 90%; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+            button { background-color: #1b2a7a; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; width: 90%; font-weight: bold; margin-top: 15px;}
+            button:hover { background-color: #121c54; }
+        </style>
+    </head>
+    <body>
+        <div class="converter-container">
+            <h2 style="color: #1b2a7a;">USD to VND Converter</h2>
+            <!-- Form gửi dữ liệu bằng phương thức POST tới trang converter.jsp -->
+            <form action="converter.jsp" method="POST">
+                <div style="text-align: left; margin-left: 5%;">
+                    <label style="font-weight: bold; color: #333;">Tỉ giá (VND/USD):</label>
+                </div>
+                <input type="number" name="rate" placeholder="Ví dụ: 25000" value="25000" required step="any"/>
+                
+                <div style="text-align: left; margin-left: 5%; margin-top: 10px;">
+                    <label style="font-weight: bold; color: #333;">Lượng USD cần đổi:</label>
+                </div>
+                <input type="number" name="usd" placeholder="Nhập số lượng USD" required step="any"/>
+                
+                <button type="submit">Tính toán</button>
+            </form>
+        </div>
+    </body>
+</html>
+3. src/main/webapp/converter.jsp
+Java
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>Kết quả chuyển đổi</title>
+        <style>
+            body { font-family: 'Arial', sans-serif; display: flex; justify-content: center; margin-top: 100px; background-color: #f8fafc; }
+            .result-container { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; width: 400px; }
+            .back-btn { text-decoration: none; padding: 10px 20px; background-color: #1b2a7a; color: white; border-radius: 4px; display: inline-block; margin-top: 20px;}
+        </style>
+    </head>
+    <body>
+        <div class="result-container">
+            <h2 style="color: #1b2a7a;">KẾT QUẢ CHUYỂN ĐỔI</h2>
+            
+            <%-- Mở thẻ Scriptlet để viết logic Java xử lý dữ liệu --%>
+            <%
+                try {
+                    // Lấy dữ liệu từ Request và ép kiểu
+                    float rate = Float.parseFloat(request.getParameter("rate"));
+                    float usd = Float.parseFloat(request.getParameter("usd"));
+                    
+                    // Tính toán
+                    float vnd = rate * usd;
+            %>
+            
+            <%-- Đóng thẻ Scriptlet tạm thời để in mã HTML bình thường --%>
+            <p style="font-size: 18px; color: #555;">Tỉ giá hiện tại: <b><%= rate %></b> VND/USD</p>
+            <p style="font-size: 18px; color: #555;">Lượng USD yêu cầu: <b>$<%= usd %></b></p>
+            
+            <div style="background-color: #e8f5e9; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                <h3 style="color: #27ae60; font-size: 24px; margin: 0;">Thành tiền: <%= vnd %> VNĐ</h3>
+            </div>
+            
+            <%-- Mở lại Scriptlet để xử lý khối catch nếu có lỗi --%>
+            <%
+                } catch (Exception e) {
+            %>
+            
+            <div style="background-color: #ffebee; padding: 15px; border-radius: 8px;">
+                <h3 style="color: #c0392b; margin: 0;">Lỗi xử lý!</h3>
+                <p>Dữ liệu đầu vào không hợp lệ. Vui lòng kiểm tra lại.</p>
+            </div>
+            
+            <%
+                }
+            %>
+            <%-- Kết thúc hoàn toàn khối Java --%>
+            
+            <a href="index.jsp" class="back-btn">Quay lại trang chủ</a>
+        </div>
+    </body>
+</html>
+4. src/main/webapp/WEB-INF/web.xml
+XML
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="[https://jakarta.ee/xml/ns/jakartaee](https://jakarta.ee/xml/ns/jakartaee)"
+         xmlns:xsi="[http://www.w3.org/2001/XMLSchema-instance](http://www.w3.org/2001/XMLSchema-instance)"
+         xsi:schemaLocation="[https://jakarta.ee/xml/ns/jakartaee](https://jakarta.ee/xml/ns/jakartaee) [https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd](https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd)"
+         version="6.0">
+    
+    <display-name>JSP Currency Converter</display-name>
+
+    <welcome-file-list>
+        <welcome-file>index.jsp</welcome-file>
+    </welcome-file-list>
+
+</web-app>
+🛠️ Hướng dẫn Đóng gói & Triển khai (Deployment)
+Bước 1: Biên dịch và Đóng gói (.war)
+Mở terminal tại thư mục gốc dự án và chạy lệnh:
+
+Bash
+mvn clean package
+Sau khi xuất hiện thông báo BUILD SUCCESS, tệp jsp-currency-converter.war sẽ được tạo trong thư mục target/.
+
+Bước 2: Triển khai lên máy chủ Tomcat 10+
+Copy tệp target/jsp-currency-converter.war vào thư mục webapps/ của máy chủ Tomcat.
+
+Khởi động Tomcat bằng cách điều hướng vào thư mục bin/ của Tomcat và chạy lệnh:
+
+Windows: startup.bat
+
+macOS / Linux: ./startup.sh
+
+Mở trình duyệt và truy cập địa chỉ: http://localhost:8080/jsp-currency-converter/
+
+🤖 Prompt tự động hóa triển khai bằng AI Agent
+Nếu bạn muốn yêu cầu AI Agent trong IDE hỗ trợ build và deploy tự động, hãy dán prompt sau:
+
+Plaintext
+Đóng vai là một chuyên gia DevOps, hãy giúp tôi tự động hóa quá trình đóng gói và triển khai dự án Java Web hiện tại lên máy chủ Tomcat.
+
+Yêu cầu thực thi:
+1. Biên dịch dự án: Mở terminal tại thư mục gốc của dự án này và chạy lệnh mvn clean package để dọn dẹp và đóng gói dự án. Hãy chờ cho đến khi xuất hiện thông báo BUILD SUCCESS.
+2. Xác định file: Tìm file .war vừa được tạo ra bên trong thư mục target/ của dự án.
+3. Triển khai (Deploy): Sử dụng lệnh hệ thống (terminal/bash/powershell) để copy file .war này và dán vào thư mục webapps của máy chủ Tomcat tại đường dẫn tuyệt đối sau: [ĐIỀN_ĐƯỜNG_DẪN_THƯ_MỤC_TOMCAT_CỦA_BẠN_VÀO_ĐÂY]
+4. Khởi động Server: Sau khi copy thành công, hãy điều hướng terminal tới thư mục bin của Tomcat và chạy file khởi động (startup.bat cho Windows hoặc ./startup.sh cho macOS/Linux).
+
+Hãy hiển thị cho tôi các lệnh bạn sẽ chạy trước khi thực thi để tôi phê duyệt.
